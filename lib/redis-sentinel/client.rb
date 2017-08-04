@@ -77,7 +77,7 @@ class Redis::Client
           master_host, master_port = current_sentinel.sentinel("get-master-addr-by-name", @master_name)
           if master_host && master_port
             # An ip:port pair
-            @options.merge!(:host => master_host, :port => master_port.to_i, :password => @master_password)
+            update_connection_options(:host => master_host, :port => master_port.to_i, :password => @master_password)
             refresh_sentinels_list
             break
           else
@@ -157,7 +157,7 @@ class Redis::Client
               when "+switch-master"
                 master_name, old_host, old_port, new_host, new_port = message.split(" ")
                 next if master_name != @master_name
-                @options.merge!(:host => new_host, :port => new_port.to_i)
+                update_connection_options(:host => new_host, :port => new_port.to_i)
                 @logger.debug "Failover: #{old_host}:#{old_port} => #{new_host}:#{new_port}" if @logger && @logger.debug?
                 disconnect
               when "+sentinel"
@@ -195,6 +195,13 @@ class Redis::Client
 
     def fetch_option(options, key)
       options.delete(key) || options.delete(key.to_s)
+    end
+
+    def update_connection_options(opts = {})
+      @options.merge!(opts)
+      connector_class = ::Redis::Client.const_get("Connector")
+      return if connector_class.nil?
+      @connector = connector_class.new(@options)
     end
 
     def parse_sentinel_options(options)
