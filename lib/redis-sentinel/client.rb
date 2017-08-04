@@ -62,7 +62,12 @@ class Redis::Client
 
     def refresh_sentinels_list
       current_sentinel.sentinel("sentinels", @master_name).each do |response|
-        @sentinels_options << {:host => response[3], :port => response[5]}
+        case response
+        when Hash
+          @sentinels_options << {:host => response["ip"], :port => response["port"].to_i}
+        when Array
+          @sentinels_options << {:host => response[3], :port => response[5].to_i}
+        end
       end
       @sentinels_options.uniq! {|h| h.values_at(:host, :port) }
     end
