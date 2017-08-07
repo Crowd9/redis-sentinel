@@ -186,15 +186,14 @@ class Redis::Client
   private
     def readonly_protection_with_timeout(method, *args, &block)
       deadline = @failover_reconnect_timeout.to_i + Time.now.to_f
-      send(method, *args, &block)
-    rescue Redis::CommandError => e
-      if e.message.include? "READONLY You can't write against a read only slave."
-        reconnect
-        raise if Time.now.to_f > deadline
+      begin
+        send(method, *args, &block)
+      rescue Redis::CommandError => e
+        raise unless e.message.include? "READONLY You can't write against a read only slave."
         sleep @failover_reconnect_wait
+        raise if Time.now.to_f > deadline
+        reconnect
         retry
-      else
-        raise
       end
     end
 
