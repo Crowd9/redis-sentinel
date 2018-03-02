@@ -129,7 +129,7 @@ class Redis::Client
     end
 
     def disconnect_with_sentinels
-      current_sentinel.client.disconnect if current_sentinel
+      current_sentinel.send(current_sentinel.respond_to?(:_client) ? :_client : :client).disconnect if current_sentinel
       @watch_thread.kill if @watch_thread
       disconnect_without_sentinels
     end

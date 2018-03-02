@@ -2,7 +2,7 @@ require "spec_helper"
 
 describe Redis::Client do
   let(:client) { double("Client", :reconnect => true) }
-  let(:current_sentinel)  { double("Redis", :client => client) }
+  let(:current_sentinel)  { double("Redis", :_client => client) }
 
   let(:sentinels) do
     [
